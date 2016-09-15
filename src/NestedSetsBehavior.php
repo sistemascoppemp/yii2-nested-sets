@@ -12,6 +12,7 @@ use yii\base\NotSupportedException;
 use yii\db\ActiveRecord;
 use yii\db\Exception;
 use yii\db\Expression;
+use \Yii;
 
 /**
  * NestedSetsBehavior
@@ -192,7 +193,8 @@ class NestedSetsBehavior extends Behavior
         $condition = [
             'and',
             ['>=', $this->leftAttribute, $this->owner->getAttribute($this->leftAttribute)],
-            ['<=', $this->rightAttribute, $this->owner->getAttribute($this->rightAttribute)]
+            ['<=', $this->rightAttribute, $this->owner->getAttribute($this->rightAttribute)],
+            ['=', 'idn_emp', Yii::$app->session->get('idnEmpGlobal')]
         ];
 
         $this->applyTreeAttributeCondition($condition);
@@ -214,6 +216,7 @@ class NestedSetsBehavior extends Behavior
             'and',
             ['<', $this->leftAttribute, $this->owner->getAttribute($this->leftAttribute)],
             ['>', $this->rightAttribute, $this->owner->getAttribute($this->rightAttribute)],
+            ['=', 'idn_emp', Yii::$app->session->get('idnEmpGlobal')],
         ];
 
         if ($depth !== null) {
@@ -236,6 +239,7 @@ class NestedSetsBehavior extends Behavior
             'and',
             ['>', $this->leftAttribute, $this->owner->getAttribute($this->leftAttribute)],
             ['<', $this->rightAttribute, $this->owner->getAttribute($this->rightAttribute)],
+            ['=', 'idn_emp', Yii::$app->session->get('idnEmpGlobal')],
         ];
 
         if ($depth !== null) {
@@ -258,6 +262,7 @@ class NestedSetsBehavior extends Behavior
             ['>', $this->leftAttribute, $this->owner->getAttribute($this->leftAttribute)],
             ['<', $this->rightAttribute, $this->owner->getAttribute($this->rightAttribute)],
             [$this->rightAttribute => new Expression($this->owner->getDb()->quoteColumnName($this->leftAttribute) . '+ 1')],
+            ['=', 'idn_emp', Yii::$app->session->get('idnEmpGlobal')]
         ];
 
         $this->applyTreeAttributeCondition($condition);
@@ -274,7 +279,7 @@ class NestedSetsBehavior extends Behavior
         $condition = [$this->rightAttribute => $this->owner->getAttribute($this->leftAttribute) - 1];
         $this->applyTreeAttributeCondition($condition);
 
-        return $this->owner->find()->andWhere($condition);
+        return $this->owner->find()->andWhere($condition)->where(['idn_emp' => Yii::$app->session->get('idnEmpGlobal')]);;
     }
 
     /**
@@ -284,9 +289,10 @@ class NestedSetsBehavior extends Behavior
     public function next()
     {
         $condition = [$this->leftAttribute => $this->owner->getAttribute($this->rightAttribute) + 1];
+        $condition[] =   ['=', 'idn_emp', Yii::$app->session->get('idnEmpGlobal')];
         $this->applyTreeAttributeCondition($condition);
 
-        return $this->owner->find()->andWhere($condition);
+        return $this->owner->find()->andWhere($condition)->where(['idn_emp' => Yii::$app->session->get('idnEmpGlobal')]);
     }
 
     /**
@@ -512,6 +518,7 @@ class NestedSetsBehavior extends Behavior
                 'and',
                 ['>=', $this->leftAttribute, $leftValue],
                 ['<=', $this->rightAttribute, $rightValue],
+                ['=', 'idn_emp', Yii::$app->session->get('idnEmpGlobal')],
                 [$this->treeAttribute => $treeValue]
             ]
         );
@@ -531,18 +538,18 @@ class NestedSetsBehavior extends Behavior
         $depthValue = $this->owner->getAttribute($this->depthAttribute);
         $depthAttribute = $db->quoteColumnName($this->depthAttribute);
         $depth = $this->node->getAttribute($this->depthAttribute) - $depthValue + $depth;
-
         if ($this->treeAttribute === false
             || $this->owner->getAttribute($this->treeAttribute) === $this->node->getAttribute($this->treeAttribute)) {
             $delta = $rightValue - $leftValue + 1;
             $this->shiftLeftRightAttribute($value, $delta);
-
             if ($leftValue >= $value) {
                 $leftValue += $delta;
                 $rightValue += $delta;
             }
 
-            $condition = ['and', ['>=', $this->leftAttribute, $leftValue], ['<=', $this->rightAttribute, $rightValue]];
+
+            $condition = ['and', ['>=', $this->leftAttribute, $leftValue], ['<=', $this->rightAttribute, $rightValue],
+                ['=', 'idn_emp', Yii::$app->session->get('idnEmpGlobal')]];
             $this->applyTreeAttributeCondition($condition);
 
             $this->owner->updateAll(
@@ -551,7 +558,8 @@ class NestedSetsBehavior extends Behavior
             );
 
             foreach ([$this->leftAttribute, $this->rightAttribute] as $attribute) {
-                $condition = ['and', ['>=', $attribute, $leftValue], ['<=', $attribute, $rightValue]];
+                $condition = ['and', ['>=', $attribute, $leftValue], ['<=', $attribute, $rightValue],
+                    ['=', 'idn_emp', Yii::$app->session->get('idnEmpGlobal')]];
                 $this->applyTreeAttributeCondition($condition);
 
                 $this->owner->updateAll(
@@ -569,7 +577,8 @@ class NestedSetsBehavior extends Behavior
             foreach ([$this->leftAttribute, $this->rightAttribute] as $attribute) {
                 $this->owner->updateAll(
                     [$attribute => new Expression($db->quoteColumnName($attribute) . sprintf('%+d', $rightValue - $leftValue + 1))],
-                    ['and', ['>=', $attribute, $value], [$this->treeAttribute => $nodeRootValue]]
+                    ['and', ['>=', $attribute, $value], [$this->treeAttribute => $nodeRootValue],
+                        ['=', 'idn_emp', Yii::$app->session->get('idnEmpGlobal')]]
                 );
             }
 
@@ -587,6 +596,7 @@ class NestedSetsBehavior extends Behavior
                     ['>=', $this->leftAttribute, $leftValue],
                     ['<=', $this->rightAttribute, $rightValue],
                     [$this->treeAttribute => $this->owner->getAttribute($this->treeAttribute)],
+                    ['=', 'idn_emp', Yii::$app->session->get('idnEmpGlobal')]
                 ]
             );
 
@@ -625,7 +635,8 @@ class NestedSetsBehavior extends Behavior
             $condition = [
                 'and',
                 ['>=', $this->leftAttribute, $this->owner->getAttribute($this->leftAttribute)],
-                ['<=', $this->rightAttribute, $this->owner->getAttribute($this->rightAttribute)]
+                ['<=', $this->rightAttribute, $this->owner->getAttribute($this->rightAttribute)],
+                ['=', 'idn_emp', Yii::$app->session->get('idnEmpGlobal')]
             ];
 
             $this->applyTreeAttributeCondition($condition);
@@ -657,6 +668,7 @@ class NestedSetsBehavior extends Behavior
 
         foreach ([$this->leftAttribute, $this->rightAttribute] as $attribute) {
             $condition = ['>=', $attribute, $value];
+
             $this->applyTreeAttributeCondition($condition);
 
             $this->owner->updateAll(
